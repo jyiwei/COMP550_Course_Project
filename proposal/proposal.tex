@@ -1,54 +1,57 @@
-\documentclass[12pt, a4paper]{extarticle}
+\documentclass[9pt, a4paper]{extarticle}
 
-\title{COMP 550 Proposal: Supervised Text Classification Task on Chinese Dataset}
-\author{Xijuan Sun, Zihan Wang, Jack Wei}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Comp 550 Project Proposal}
+\author{Zihan Wang\\
+260825558
+\and Xijuan Sun \\
+260896211
+\and Jack Wei \\
+260837048}
+
 \date{}
+
+
 
 \begin{document}
 
-\maketitle 
+\maketitle
 
-\section{Introduction}
+Chinese NLP tasks are challenging due to the absence of natural delimiters like spaces, which are common in languages like English. For this project, our team aims to explore and evaluate different word segmentation schemes for a Chinese online-shopping review dataset to improve the performance of LSTM on text classification and sentiment analysis tasks. Specifically, we investigate various tokenization schemes, such as pinyin-based, character-level tokenization as well as word/subword segmentation. Through this study, we want to answer the following questions: 
 
-In this proposal, we outline a comprehensive approach for conducting a supervised text classification task on a Chinese dataset, specifically the "10 Shopping Carts" dataset. Our goal is to explore and compare the performance of text classification models across different language domains: Pinyin-level, Chinese-word-level, and English-level text classification. We also aim to analyze the distinct features and characteristics of each language domain. Additionally, we will evaluate various machine learning models, including LSTM-based models, logistic regression, Naive Bayes, support vector machines (SVM), convolutional neural networks (CNN), and BERT, for text classification on the variant datasets.
+\begin{enumerate}
+    \item Which granularity of Chinese feature tokens is optimal for sentiment analysis?
+    \item Which granularity is best suited for general text classification?
+\end{enumerate}
 
-\section{Objectives}
-Our primary objectives for this project are as follows:
-* Implement text classification on the "10 Shopping Carts" dataset, which is a well-established text classification dataset.
-* Conduct text classification at three different language levels: Pinyin, Chinese words, and English.
-* Train LSTM-based models for each language domain and compare their performance.
-* Analyze the unique linguistic features of each language domain.
-* Evaluate the performance of various machine learning-based models on the different language domains.
-* Optionally, explore the possibility of contrastive learning by merging features from the Chinese word, Pinyin, and English word levels to understand the impact of data features on text classification performance.
+\section{Feature Extraction}
+The focus of our study is on three different ways to tokenize chinese words. These include: pinyin-based tokenization, character-level tokenization, word-level segmentation. We aim to perform these tokenization as follows
+
+\begin{enumerate}
+    \item \textbf{Pinyin-based}: Pinyin is a pronunciation-based Romanization system for Chinese. For this feature, we convert Chinese characters into pinyin without tonal information. This can be done through the Python pinyin package. 
+    \item \textbf{Character-level}: 
+    This is the most straightforward method for Chinese language tokenization.
+    \item \textbf{Word-level Segmentation}: Word-level segmentation tokenizes multi-character words or phrases. Various tools, like Jieba and the Stanford Word Segmenter, can be employed to execute segmentation for Chinese. 
+\end{enumerate}
+
+\section{Dataset}
+At this preliminary stage, we have chosen one of the classification dataset from a Chinese NLP Corpus \footnote{https://github.com/SophonPlus/ChineseNlpCorpus}, "online\_shopping\_10\_cats", a collection of online reviews encompassing 10 product/service categories, including books, tablets, phones, hotels, shampoos, and more. Each one of the 60000 reviews is labeled with its respective sentiment (positive or negative), facilitating both classification and sentiment analysis tasks. If the dataset is shown to be too easy for sentiment analysis/text classification task then we are open to selecting other datasets available in the same repository. 
+
+\section{Model}
+
+Our base model for the classification/sentiment is LSTM. An embedding layer will be employed to convert the processed tokens into dense vectors. For the training process, we will employ categorical cross-entropy for multi-class classification and binary cross-entropy for the binary sentiment classification. Moreover, we will consider early stopping based on validation loss to ensure the most optimal model is retained.
+
+\section{Evaluation}
+
+The quality of the word segmentation schemes will be evaluated by the performance of the classifier models on both tasks. Since the classes/labels in the datasets are well-balanced, we will primarily use accuracy as the evaluation metric, though we're open to considering other metrics like F1-score and AUC-ROC.
+
+\section{Optional Experimentation Options}
+
+If the scale of our project is limited and if time permits, we may expand our project to include experimentation on some more advanced Chinese segmentation methods in the literature. Moreover, we may expand our models to include linear models with bag-of-words and n-grams features.
 
 
-\section{Methodology}
-Our methodology consists of the following steps:
-3.1 Data Preprocessing
-* 		Convert Chinese characters to Pinyin and translate Chinese text to English using Python packages such as pinyin and translation APIs.
-* 		Prepare the "10 Shopping Carts" dataset for text classification tasks, ensuring data is cleaned, tokenized, and labeled appropriately.
-3.2 Model Training
-* 		Train LSTM-based models separately for Pinyin-level, Chinese-word-level, and English-level text classification. Fine-tune these models on the "10 Shopping Carts" dataset.
-* 		Train other machine learning-based models, including logistic regression, Naive Bayes, SVM, CNN, and BERT, on the same datasets for comparison.
-3.3 Evaluation and Analysis
-* 		Evaluate the performance of all models using appropriate evaluation metrics (e.g., accuracy, precision, recall, F1-score).
-* 		Analyze the features and characteristics of each language domain to gain insights into their strengths and weaknesses.
-* 		Compare the models' performance across different language domains to identify which models work best for each domain.
-3.4 Optional: Contrastive Learning
-* 		If time permits, merge features from the Chinese word, Pinyin, and English word levels and experiment with contrastive learning to examine the impact of data features on text classification performance.
-
-\section{Expected Outcomes}
-
-We anticipate the following outcomes:
-* Comparative analysis of text classification model performance across Pinyin, Chinese words, and English levels.
-* Insights into the unique linguistic features and challenges of each language domain.
-* A comprehensive comparison of various machine learning models' effectiveness in classifying text in these different domains.
-* If applicable, insights from the optional contrastive learning experiment, revealing the influence of data features on classification performance.
-
-\section{Conclusion}
-
-This project aims to provide valuable insights into the challenges and opportunities of text classification in different language domains and the comparative performance of various machine learning models. By undertaking this study, we seek to contribute to the understanding of cross-lingual text classification and improve text classification methods in real-world applications.
-Please let us know your thoughts and any further details or modifications you would like to discuss before proceeding with this research project.
 
 
 \end{document}
