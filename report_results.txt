@@ -1,0 +1,35 @@
+Bi-LSTM Attention 
+
+Word based (with Pretrained model embedding size 50 wiki word2vec ):
+Vocab size is 68419
+lr:0.0001, num_layers: 2, batch_size: 256, hidden_dim: 128 
+Accuracy: 76.62%
+F1: 0.7637
+AUROC: 0.7637
+Stoped at 69 epochs
+
+Word based (from scratch):
+lr:0.0001, num_layers: 2, batch_size: 256, hidden_dim: 128 
+Vocab size is 68419
+Accuracy: 53.58%
+F1: 0.4351
+AUROC: 0.5373
+Stoped at 15 epochs
+
+Character based (from scratch):
+Vocab size is 4813
+lr:0.0003, num_layers: 2, batch_size: 256, hidden_dim: 128 
+Accuracy: 55.27%
+F1: 0.4969
+AUROC: 0.5562
+Stoped at 5 epochs
+
+Pingyin based (from scratch):
+Vocab size is 620
+lr:0.0001, num_layers: 2, batch_size: 256, hidden_dim: 128 
+Accuracy: 53.86%
+F1: 0.4966
+AUROC: 0.5427
+Stoped at 5 epochs
+
+

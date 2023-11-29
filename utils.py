@@ -50,3 +50,25 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.counter = 0
+
+def check_word2vec_coverage(vocab, word2vec_model):
+    covered = {}
+    oov = {}
+    covered_count = 0
+    oov_count = 0
+
+    for word in vocab.keys():
+        if word in word2vec_model:
+            covered[word] = word2vec_model[word]
+            covered_count += 1
+        else:
+            oov[word] = vocab[word]
+            oov_count += 1
+
+    coverage = covered_count / (covered_count + oov_count)
+    print("Number of words in vocab:", len(vocab))
+    print("Number of words covered by Word2Vec:", covered_count)
+    print("Number of words NOT covered by Word2Vec:", oov_count)
+    print("Coverage of Word2Vec on vocab: {:.2f}%".format(coverage * 100))
+
+    return covered, oov
