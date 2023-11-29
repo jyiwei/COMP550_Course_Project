@@ -28,6 +28,9 @@ if __name__ == "__main__":
     word2vec_model = load_word2vec_model(Config.word2vec_path)
     embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
 
+    covered, oov = check_word2vec_coverage(vocab, word2vec_model)
+    #print(oov)
+
     model = LSTM_attention(vocab_size, 
                            Config.embedding_dim, 
                            embedding_matrix.clone().detach(), 
@@ -138,7 +141,7 @@ if __name__ == "__main__":
 
         plt.show()
 
-    model_save_path = os.path.join(Config.saved_model_path, f"{Config.model_name}_{Config.mode}_{Config.lr}_{Config.num_epochs}_{Config.num_layers}.pth")
+    model_save_path = os.path.join(Config.saved_model_path, f"{Config.model_name}_{Config.mode}_{Config.lr}_{epoch}_{Config.num_layers}.pth")
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved at {model_save_path}")
     
