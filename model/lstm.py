@@ -16,6 +16,7 @@ class LSTM_attention(nn.Module):
         drop_keep_prob,
         n_class,
         bidirectional,
+        use_pretrained = False,
         **kwargs
     ):
         super(LSTM_attention, self).__init__()
@@ -25,8 +26,14 @@ class LSTM_attention(nn.Module):
 
         self.bidirectional = bidirectional
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
-        self.embedding.weight = nn.Parameter(torch.tensor(pretrained_weight, dtype=torch.float32))
-        self.embedding.weight.requires_grad = update_w2v
+
+        if use_pretrained:
+            self.embedding.weight = nn.Parameter(torch.tensor(pretrained_weight, dtype=torch.float32))
+            self.embedding.weight.requires_grad = update_w2v
+
+        else:
+            nn.init.uniform_(self.embedding.weight, -0.1, 0.1)
+            self.embedding.weight.requires_grad = True
 
         self.encoder = nn.LSTM(
             input_size=embedding_dim,

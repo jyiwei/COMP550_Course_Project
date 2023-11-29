@@ -1,5 +1,6 @@
 import pandas as pd
 import jieba
+import pinyin
 
 from config import Config
 
@@ -49,11 +50,25 @@ def stopwordslist(filepath):
     stopwords = [line.strip() for line in open(filepath, encoding="UTF-8").readlines()]
     return stopwords
 
-def preprocess_text(text, stopwords):
+def preprocess_text(text, stopwords, mode=Config.mode):
+
     if not isinstance(text, str):
         text = str(text)
-    tokens = jieba.lcut(text)
+
+    tokens = []
+
+    if mode == 'word':
+        tokens = jieba.lcut(text)
+    elif mode == 'character':
+        tokens = [char for char in text]
+    elif mode == 'pingyin':
+        tokens = pinyin.get(text, format="strip", delimiter=" ").split()
+    else:
+        raise CustomError("Wrong mode")
+
+
     tokens = [token for token in tokens if token not in stopwords]
+
     return ' '.join(tokens)
 
 def pytorch_word2vec_dataloader():
