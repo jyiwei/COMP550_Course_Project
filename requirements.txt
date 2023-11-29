@@ -1,0 +1,9 @@
+numpy
+gensim
+torch
+jieba
+pinyin
+matplotlib
+pandas
+transformers
+scikit-learn
