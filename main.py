@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import os
 from sklearn.metrics import f1_score, roc_auc_score
 
+SEED = 42
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 if __name__ == "__main__":
 
-    seed = 42
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed if torch.cuda.is_available() else 0)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
 
     train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
 
