@@ -10,7 +10,7 @@ from collections import Counter
 from torch.nn.utils.rnn import pad_sequence
 from gensim.models import KeyedVectors
 
-from transformers import BertTokenizer, BertForSequenceClassification
+#from transformers import BertTokenizer, BertForSequenceClassification
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 
 from utils import *
@@ -93,7 +93,7 @@ def pytorch_word2vec_dataloader():
 ###########################################################################################
 ###########################################################################################
 ###########################################################################################
-
+"""
 class BERTTextDataset(Dataset):
     def __init__(self, data_dict, bert_model_name='bert-base-uncased'):
         self.data = data_dict
@@ -143,7 +143,7 @@ def pytorch_bert_dataloader():
 
     return train_dataloader, valid_dataloader, test_dataloader
 
-
+"""
 if __name__ == "__main__":
     dataloader = pytorch_word2vec_dataloader()
     it = iter(dataloader)

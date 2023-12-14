@@ -25,22 +25,22 @@ if __name__ == "__main__":
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
 
-    word2vec_model = load_word2vec_model(Config.word2vec_path)
-    embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
+    #word2vec_model = load_word2vec_model(Config.word2vec_path)
+    #embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
 
-    covered, oov = check_word2vec_coverage(vocab, word2vec_model)
+    #covered, oov = check_word2vec_coverage(vocab, word2vec_model)
     #print(oov)
 
     model = LSTM_attention(vocab_size, 
                            Config.embedding_dim, 
-                           embedding_matrix.clone().detach(), 
-                           True, # update word2vec
                            Config.hidden_dim, 
                            Config.num_layers, 
                            Config.drop_keep_prob, 
                            Config.n_class, 
                            Config.bidirectional,
                            Config.use_pretrained
+                        #    embedding_matrix.clone 
+                        #    True, # update word2vec
                            )
     model.to(device)
     print(model)
