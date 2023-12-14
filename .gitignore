@@ -1,3 +1,6 @@
 pretrained/
 __pycache__/
 save/
+.DS_Store
+myenv/
+ssh-remote+beluga.computecanada.ca:.inetloc
