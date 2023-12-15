@@ -14,6 +14,7 @@ from gensim.models import KeyedVectors
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 
 from utils import *
+from sklearn.feature_extraction.text import CountVectorizer
 
 class Word2VecTextDataset(Dataset):
     def __init__(self, data_dict, vocab):
@@ -72,6 +73,15 @@ def preprocess_text(text, stopwords, mode=Config.mode):
     return ' '.join(tokens)
 
 def pytorch_word2vec_dataloader():
+    """
+    This function creates and returns PyTorch dataloaders for word2vec training.
+    
+    Returns:
+    train_dataloader (torch.utils.data.DataLoader): Dataloader for training data.
+    valid_dataloader (torch.utils.data.DataLoader): Dataloader for validation data.
+    test_dataloader (torch.utils.data.DataLoader): Dataloader for test data.
+    vocab (list): List of unique words in the dataset.
+    """
     dataframe = pd.read_csv(Config.dataset_path)
     data_dict = dataframe.to_dict(orient='records')
 
@@ -88,6 +98,48 @@ def pytorch_word2vec_dataloader():
     test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
 
     return train_dataloader, valid_dataloader, test_dataloader, vocab
+
+class BagOfWordsTextDataset(Dataset):
+    def __init__(self, data_dict, vectorizer):
+        self.data = data_dict
+        self.vectorizer = vectorizer
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        entry = self.data[idx]
+        text = entry['processed_review']
+        vector = self.vectorizer.transform([text]).toarray()
+        return torch.tensor(vector.flatten()), torch.tensor(entry['label'])
+
+def create_vectorizer(data_dict):
+    texts = [entry['processed_review'] for entry in data_dict]
+    vectorizer = CountVectorizer(token_pattern=r"(?u)\b\w+\b")
+    vectorizer.fit(texts)
+    return vectorizer
+
+def bag_of_words_collate_batch(batch):
+    sequences, labels = zip(*batch)
+    return torch.stack(sequences), torch.stack(labels)
+
+def pytorch_bag_of_words_dataloader():
+    dataframe = pd.read_csv(Config.dataset_path)
+    data_dict = dataframe.to_dict(orient='records')
+
+    stopwords = stopwordslist(Config.stopword_path)
+    for entry in data_dict:
+        entry['processed_review'] = preprocess_text(entry['review'], stopwords)
+
+    vectorizer = create_vectorizer(data_dict)
+    dataset = BagOfWordsTextDataset(data_dict, vectorizer)
+    train_data, valid_data, test_data = split_dataset(dataset)
+
+    train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
+    valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
+    test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
+
+    return train_dataloader, valid_dataloader, test_dataloader, vectorizer.get_feature_names_out()
 
 ###########################################################################################
 ###########################################################################################

@@ -1,15 +1,17 @@
-from gensim.models import KeyedVectors
-import numpy as np
-
-from config import Config
-from utils import *
-
-from preprocess import *
-from model.lstm import *
-
-import matplotlib.pyplot as plt 
 import os
+import torch
+import torch.nn as nn
+import numpy as np
+from config import Config
+import matplotlib.pyplot as plt 
+from gensim.models import KeyedVectors
 from sklearn.metrics import f1_score, roc_auc_score
+
+from utils import EarlyStopping 
+from utils import load_word2vec_model, create_embedding_matrix, check_word2vec_coverage  
+from preprocess import pytorch_word2vec_dataloader, pytorch_bag_of_words_dataloader
+from model.lstm import LSTM_attention
+from model.logistic_regression import LogisticRegression
 
 SEED = 42
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -20,7 +22,10 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
 
-    train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
+    if Config.model_name == 'BiLSTM_A':
+        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
+    elif Config.model_name == 'LR':
+        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_bag_of_words_dataloader()
 
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
@@ -31,17 +36,21 @@ if __name__ == "__main__":
     #covered, oov = check_word2vec_coverage(vocab, word2vec_model)
     #print(oov)
 
-    model = LSTM_attention(vocab_size, 
-                           Config.embedding_dim, 
-                           Config.hidden_dim, 
-                           Config.num_layers, 
-                           Config.drop_keep_prob, 
-                           Config.n_class, 
-                           Config.bidirectional,
-                           Config.use_pretrained
-                        #    embedding_matrix.clone 
-                        #    True, # update word2vec
-                           )
+    if Config.model_name == 'BiLSTM_A':
+        model = LSTM_attention(vocab_size, 
+                            Config.embedding_dim, 
+                            Config.hidden_dim, 
+                            Config.num_layers, 
+                            Config.drop_keep_prob, 
+                            Config.n_class, 
+                            Config.bidirectional,
+                            Config.use_pretrained
+                            #    embedding_matrix.clone 
+                            #    True, # update word2vec
+                            )
+    elif Config.model_name == 'LR':
+        model = LogisticRegression(vocab_size, Config.n_class)
+
     model.to(device)
     print(model)
 
