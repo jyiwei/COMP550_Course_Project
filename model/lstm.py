@@ -11,13 +11,13 @@ class LSTM_attention(nn.Module):
         self,
         vocab_size,
         embedding_dim,
-        pretrained_weight,
-        update_w2v,
         hidden_dim,
         num_layers,
         drop_keep_prob,
         n_class,
         bidirectional,
+        pretrained_weight = None,
+        update_w2v = None,
         use_pretrained = False,
         **kwargs
     ):

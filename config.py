@@ -1,7 +1,7 @@
 
 
 class Config:
-    model_name = 'BiLSTM_A'
+    model_name = 'BiLSTM_A' # LR
     update_w2v = True  
     #vocab_size = 68419  
     n_class = 2  
@@ -17,13 +17,13 @@ class Config:
     mode = 'pingyin' # word # character # pingyin 
     patience = 5
     #pretrained_model
-    word2vec_path = 'pretrained\wiki_word2vec_50.bin'
+    word2vec_path = 'pretrained/wiki_word2vec_50.bin'
     # when use word, you can use the pretrained model
     use_pretrained = False
 
     # Path for dataset
-    stopword_path = 'data\stopword.txt'
-    dataset_path = 'data\online_shopping_10_cats.csv'
+    stopword_path = 'data/stopword.txt'
+    dataset_path = 'data/online_shopping_10_cats.csv'
 
     plot_graph = False
 

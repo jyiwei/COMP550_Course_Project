@@ -1,5 +1,11 @@
-from gensim.models import KeyedVectors
+import os
+import torch
+import torch.nn as nn
 import numpy as np
+from config import Config
+import matplotlib.pyplot as plt 
+from gensim.models import KeyedVectors
+from sklearn.metrics import f1_score, roc_auc_score
 
 from utils import EarlyStopping 
 from utils import load_word2vec_model, create_embedding_matrix, check_word2vec_coverage  
@@ -24,10 +30,10 @@ if __name__ == "__main__":
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
 
-    word2vec_model = load_word2vec_model(Config.word2vec_path)
-    embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
+    #word2vec_model = load_word2vec_model(Config.word2vec_path)
+    #embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
 
-    covered, oov = check_word2vec_coverage(vocab, word2vec_model)
+    #covered, oov = check_word2vec_coverage(vocab, word2vec_model)
     #print(oov)
 
     if Config.model_name == 'BiLSTM_A':

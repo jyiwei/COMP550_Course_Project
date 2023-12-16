@@ -1,0 +1,8 @@
+numpy==1.24.2+computecanada
+gensim==4.0.1+computecanada
+torch==1.13.1+computecanada
+jieba==0.42.1+computecanada
+matplotlib==3.7.0+computecanada
+pandas==1.5.3+computecanada
+scikit-learn==1.2.1+computecanada
+pinyin --no-index
