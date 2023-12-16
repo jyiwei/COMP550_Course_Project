@@ -1,7 +1,7 @@
 
 
 class Config:
-    model_name = 'BiLSTM_A'
+    model_name = 'BiLSTM_A' # LR
     update_w2v = True  
     #vocab_size = 68419  
     n_class = 2  
