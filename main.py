@@ -1,23 +1,11 @@
 from gensim.models import KeyedVectors
 import numpy as np
 
-<<<<<<< Updated upstream
-from config import Config
-from utils import *
-
-from preprocess import *
-from model.lstm import *
-
-import matplotlib.pyplot as plt 
-import os
-from sklearn.metrics import f1_score, roc_auc_score
-=======
 from utils import EarlyStopping 
 from utils import load_word2vec_model, create_embedding_matrix, check_word2vec_coverage  
 from preprocess import pytorch_word2vec_dataloader, pytorch_bag_of_words_dataloader
 from model.lstm import LSTM_attention, LSTMModel
 from model.logistic_regression import LogisticRegression
->>>>>>> Stashed changes
 
 SEED = 42
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -28,14 +16,10 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
 
-<<<<<<< Updated upstream
-    train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
-=======
     if Config.model_name == 'BiLSTM_A' or Config.model_name == 'LSTM':
         train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
     elif Config.model_name == 'LR':
         train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_bag_of_words_dataloader()
->>>>>>> Stashed changes
 
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
@@ -46,19 +30,6 @@ if __name__ == "__main__":
     covered, oov = check_word2vec_coverage(vocab, word2vec_model)
     #print(oov)
 
-<<<<<<< Updated upstream
-    model = LSTM_attention(vocab_size, 
-                           Config.embedding_dim, 
-                           embedding_matrix.clone().detach(), 
-                           True, # update word2vec
-                           Config.hidden_dim, 
-                           Config.num_layers, 
-                           Config.drop_keep_prob, 
-                           Config.n_class, 
-                           Config.bidirectional,
-                           Config.use_pretrained
-                           )
-=======
     if Config.model_name == 'BiLSTM_A':
         model = LSTM_attention(vocab_size, 
                             Config.embedding_dim, 
@@ -80,7 +51,6 @@ if __name__ == "__main__":
                           Config.drop_keep_prob, 
                           Config.n_class)
 
->>>>>>> Stashed changes
     model.to(device)
     print(model)
 

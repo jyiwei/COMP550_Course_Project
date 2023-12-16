@@ -13,12 +13,8 @@ from gensim.models import KeyedVectors
 from transformers import BertTokenizer, BertForSequenceClassification
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 
-<<<<<<< Updated upstream
-from utils import *
-=======
 from utils import split_dataset, CustomError
 from sklearn.feature_extraction.text import CountVectorizer
->>>>>>> Stashed changes
 
 class Word2VecTextDataset(Dataset):
     def __init__(self, data_dict, vocab):
@@ -101,54 +97,54 @@ def pytorch_word2vec_dataloader():
 ###########################################################################################
 ###########################################################################################
 
-class BERTTextDataset(Dataset):
-    def __init__(self, data_dict, bert_model_name='bert-base-uncased'):
-        self.data = data_dict
-        self.tokenizer = BertTokenizer.from_pretrained(bert_model_name)
+# class BERTTextDataset(Dataset):
+#     def __init__(self, data_dict, bert_model_name='bert-base-uncased'):
+#         self.data = data_dict
+#         self.tokenizer = BertTokenizer.from_pretrained(bert_model_name)
 
-    def __len__(self):
-        return len(self.data)
+#     def __len__(self):
+#         return len(self.data)
 
-    def __getitem__(self, idx):
-        entry = self.data[idx]
-        encoding = self.tokenizer.encode_plus(
-            entry['processed_review'],
-            add_special_tokens=True,
-            max_length=512,
-            return_token_type_ids=False,
-            padding='max_length',
-            truncation=True,
-            return_attention_mask=True,
-            return_tensors='pt',
-        )
-        return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(entry['label'])
-        }
+#     def __getitem__(self, idx):
+#         entry = self.data[idx]
+#         encoding = self.tokenizer.encode_plus(
+#             entry['processed_review'],
+#             add_special_tokens=True,
+#             max_length=512,
+#             return_token_type_ids=False,
+#             padding='max_length',
+#             truncation=True,
+#             return_attention_mask=True,
+#             return_tensors='pt',
+#         )
+#         return {
+#             'input_ids': encoding['input_ids'].flatten(),
+#             'attention_mask': encoding['attention_mask'].flatten(),
+#             'labels': torch.tensor(entry['label'])
+#         }
 
-def bert_collate_batch(batch):
-    input_ids = torch.stack([item['input_ids'] for item in batch])
-    attention_masks = torch.stack([item['attention_mask'] for item in batch])
-    labels = torch.stack([item['labels'] for item in batch])
-    return input_ids, attention_masks, labels
+# def bert_collate_batch(batch):
+#     input_ids = torch.stack([item['input_ids'] for item in batch])
+#     attention_masks = torch.stack([item['attention_mask'] for item in batch])
+#     labels = torch.stack([item['labels'] for item in batch])
+#     return input_ids, attention_masks, labels
 
-def pytorch_bert_dataloader():
-    dataframe = pd.read_csv(Config.dataset_path)
-    data_dict = dataframe.to_dict(orient='records')
+# def pytorch_bert_dataloader():
+#     dataframe = pd.read_csv(Config.dataset_path)
+#     data_dict = dataframe.to_dict(orient='records')
 
-    stopwords = stopwordslist(Config.stopword_path)
-    for entry in data_dict:
-        entry['processed_review'] = preprocess_text(entry['review'], stopwords)
+#     stopwords = stopwordslist(Config.stopword_path)
+#     for entry in data_dict:
+#         entry['processed_review'] = preprocess_text(entry['review'], stopwords)
         
-    dataset = BERTTextDataset(data_dict)
-    train_data, valid_data, test_data = split_dataset(dataset)
+#     dataset = BERTTextDataset(data_dict)
+#     train_data, valid_data, test_data = split_dataset(dataset)
 
-    train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=bert_collate_batch)
-    valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
-    test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
+#     train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=bert_collate_batch)
+#     valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
+#     test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
 
-    return train_dataloader, valid_dataloader, test_dataloader
+#     return train_dataloader, valid_dataloader, test_dataloader
 
 
 if __name__ == "__main__":
