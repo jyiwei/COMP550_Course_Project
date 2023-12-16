@@ -1,6 +1,7 @@
 from gensim.models import KeyedVectors
 import numpy as np
 
+<<<<<<< Updated upstream
 from config import Config
 from utils import *
 
@@ -10,6 +11,13 @@ from model.lstm import *
 import matplotlib.pyplot as plt 
 import os
 from sklearn.metrics import f1_score, roc_auc_score
+=======
+from utils import EarlyStopping 
+from utils import load_word2vec_model, create_embedding_matrix, check_word2vec_coverage  
+from preprocess import pytorch_word2vec_dataloader, pytorch_bag_of_words_dataloader
+from model.lstm import LSTM_attention, LSTMModel
+from model.logistic_regression import LogisticRegression
+>>>>>>> Stashed changes
 
 SEED = 42
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -20,7 +28,14 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
 
+<<<<<<< Updated upstream
     train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
+=======
+    if Config.model_name == 'BiLSTM_A' or Config.model_name == 'LSTM':
+        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
+    elif Config.model_name == 'LR':
+        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_bag_of_words_dataloader()
+>>>>>>> Stashed changes
 
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
@@ -31,6 +46,7 @@ if __name__ == "__main__":
     covered, oov = check_word2vec_coverage(vocab, word2vec_model)
     #print(oov)
 
+<<<<<<< Updated upstream
     model = LSTM_attention(vocab_size, 
                            Config.embedding_dim, 
                            embedding_matrix.clone().detach(), 
@@ -42,6 +58,29 @@ if __name__ == "__main__":
                            Config.bidirectional,
                            Config.use_pretrained
                            )
+=======
+    if Config.model_name == 'BiLSTM_A':
+        model = LSTM_attention(vocab_size, 
+                            Config.embedding_dim, 
+                            Config.hidden_dim, 
+                            Config.num_layers, 
+                            Config.drop_keep_prob, 
+                            Config.n_class, 
+                            Config.bidirectional,
+                            Config.use_pretrained
+                            #    embedding_matrix.clone 
+                            #    True, # update word2vec
+                            )
+    elif Config.model_name == 'LR':
+        model = LogisticRegression(vocab_size, Config.n_class)
+    elif Config.model_name == 'LSTM':
+        model = LSTMModel(vocab_size, 
+                          Config.embedding_dim, 
+                          Config.hidden_dim, 
+                          Config.drop_keep_prob, 
+                          Config.n_class)
+
+>>>>>>> Stashed changes
     model.to(device)
     print(model)
 
@@ -62,12 +101,12 @@ if __name__ == "__main__":
         total_samples = 0
 
         for batch in train_dataloader:
-            packed_sequences, labels = batch
-            packed_sequences, labels = packed_sequences.to(device), labels.to(device)
+            (padded_sequence, labels), seq_lengths = batch
+            padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
             optimizer.zero_grad()
 
-            outputs = model(packed_sequences)
+            outputs = model(padded_sequence, seq_lengths)
             loss = criterion(outputs, labels)
 
             loss.backward()
@@ -96,10 +135,10 @@ if __name__ == "__main__":
             total_samples = 0
 
             for batch in valid_dataloader:
-                packed_sequences, labels = batch
-                packed_sequences, labels = packed_sequences.to(device), labels.to(device)
+                (padded_sequence, labels), seq_lengths = batch
+                padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
-                outputs = model(packed_sequences)
+                outputs = model(padded_sequence, seq_lengths)
                 loss = criterion(outputs, labels)
 
                 total_valid_loss += loss.item()
@@ -151,10 +190,10 @@ if __name__ == "__main__":
     all_test_predictions = []
     try:
         for batch in test_dataloader:
-                packed_sequences, labels = batch
-                packed_sequences, labels = packed_sequences.to(device), labels.to(device)
+                (padded_sequence, labels), seq_lengths = batch
+                padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
-                outputs = model(packed_sequences)
+                outputs = model(padded_sequence, seq_lengths)
                 loss = criterion(outputs, labels)
 
                 total_test_loss += loss.item()

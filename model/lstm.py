@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+import torch
 
+from utils import CustomError
 
 class LSTM_attention(nn.Module):
     def __init__(
@@ -71,3 +73,30 @@ class LSTM_attention(nn.Module):
         outputs = self.decoder1(encoding)
         outputs = self.decoder2(outputs)
         return outputs
+    
+class LSTMModel(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, drop_keep_prob, n_class):
+        super(LSTMModel, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.dropout = nn.Dropout(p=drop_keep_prob)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, dropout=0)
+        self.dense = nn.Linear(hidden_dim, n_class)
+        if n_class > 2: 
+            self.out = nn.Softmax()
+        elif n_class == 2:
+            self.out = nn.Sigmoid()
+        else:
+            raise CustomError("n_class less than 2")
+            
+
+    def forward(self, inputs, seq_lengths):
+        embedded = self.embedding(inputs)
+        # embedded = self.dropout(embedded)
+        packed_embedded = pack_padded_sequence(embedded, seq_lengths, batch_first=True)
+        packed_output, _ = self.lstm(packed_embedded)
+        output, input_sizes = pad_packed_sequence(packed_output, batch_first=True) 
+        final_hidden = output[:,-1,:]
+        dense_output = self.dense(final_hidden)
+        output = self.out(dense_output)
+        return output
+
