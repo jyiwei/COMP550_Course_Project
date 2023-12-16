@@ -77,12 +77,12 @@ if __name__ == "__main__":
         total_samples = 0
 
         for batch in train_dataloader:
-            (padded_sequence, labels), seq_lengths = batch
+            padded_sequence, labels = batch
             padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
             optimizer.zero_grad()
 
-            outputs = model(padded_sequence, seq_lengths)
+            outputs = model(padded_sequence)
             loss = criterion(outputs, labels)
 
             loss.backward()
@@ -111,10 +111,10 @@ if __name__ == "__main__":
             total_samples = 0
 
             for batch in valid_dataloader:
-                (padded_sequence, labels), seq_lengths = batch
+                padded_sequence, labels = batch
                 padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
-                outputs = model(padded_sequence, seq_lengths)
+                outputs = model(padded_sequence)
                 loss = criterion(outputs, labels)
 
                 total_valid_loss += loss.item()
@@ -166,10 +166,10 @@ if __name__ == "__main__":
     all_test_predictions = []
     try:
         for batch in test_dataloader:
-                (padded_sequence, labels), seq_lengths = batch
+                padded_sequence, labels = batch
                 padded_sequence, labels = padded_sequence.to(device), labels.to(device)
 
-                outputs = model(padded_sequence, seq_lengths)
+                outputs = model(padded_sequence)
                 loss = criterion(outputs, labels)
 
                 total_test_loss += loss.item()

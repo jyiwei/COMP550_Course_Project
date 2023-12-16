@@ -60,18 +60,24 @@ class LSTM_attention(nn.Module):
 
     def forward(self, inputs):
 
+        lengths = torch.sum(inputs != 0, dim=1)
+
         embeddings = self.embedding(inputs.data)
-        packed_states, hidden = self.encoder(embeddings)
+        packed_embeddings = pack_padded_sequence(embeddings, lengths.cpu(), batch_first=True)
+
+        packed_output, hidden = self.encoder(packed_embeddings)
+
+        output, _ = pad_packed_sequence(packed_output, batch_first=True)
         
-        u = torch.tanh(torch.matmul(packed_states.data, self.weight_W))
+        u = torch.tanh(torch.matmul(output, self.weight_W))
         att = torch.matmul(u, self.weight_proj)
         att_score = F.softmax(att, dim=1)
-        scored_x = packed_states.data * att_score
-        packed_scored_x = torch.nn.utils.rnn.PackedSequence(scored_x, inputs.batch_sizes)
-        unpacked_scored_x, _ = pad_packed_sequence(packed_scored_x, batch_first=True)
-        encoding = torch.sum(unpacked_scored_x, dim=1)
+        scored_x = output * att_score
+        encoding = torch.sum(scored_x, dim=1)
+
         outputs = self.decoder1(encoding)
         outputs = self.decoder2(outputs)
+
         return outputs
     
 class LSTMModel(nn.Module):
@@ -89,14 +95,23 @@ class LSTMModel(nn.Module):
             raise CustomError("n_class less than 2")
             
 
-    def forward(self, inputs, seq_lengths):
+    def forward(self, inputs):
+
+        lengths = torch.sum(inputs != 0, dim=1)
+
         embedded = self.embedding(inputs)
-        # embedded = self.dropout(embedded)
-        packed_embedded = pack_padded_sequence(embedded, seq_lengths, batch_first=True)
-        packed_output, _ = self.lstm(packed_embedded)
-        output, input_sizes = pad_packed_sequence(packed_output, batch_first=True) 
-        final_hidden = output[:,-1,:]
+        embedded = self.dropout(embedded)
+        
+        packed_embedded = pack_padded_sequence(embedded, lengths.cpu(), batch_first=True)
+        
+        packed_output, (hidden, cell) = self.lstm(packed_embedded)
+        
+        output, _ = pad_packed_sequence(packed_output, batch_first=True)
+        
+        final_hidden = output[torch.arange(output.size(0)), lengths-1]
+        
         dense_output = self.dense(final_hidden)
         output = self.out(dense_output)
+        
         return output
 

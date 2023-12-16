@@ -38,16 +38,13 @@ def create_vocab(data_dict):
     return vocab
 
 def lstm_collate_batch(batch):
-    # print(batch)
     batch.sort(key=lambda x: len(x[0]), reverse=True)
     sequences, labels = zip(*batch)
-    lengths = [len(seq) for seq in sequences]
-    # print("===================")
-    # print(lengths)
+    # lengths = [len(seq) for seq in sequences]
     padded_sequences = pad_sequence(sequences, batch_first=True, padding_value=0)
     label_list = torch.tensor(labels)
     # packed_sequences = pack_padded_sequence(padded_sequences, lengths, batch_first=True)
-    return (padded_sequences, label_list), lengths
+    return padded_sequences, label_list
 
 def stopwordslist(filepath):  
     stopwords = [line.strip() for line in open(filepath, encoding="UTF-8").readlines()]
