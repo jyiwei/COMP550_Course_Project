@@ -205,9 +205,12 @@ def main():
     elif model_type == 'LR':
         config_name = f"{args.model_name}_{args.mode}_{epoch}"
 
-    model_save_path = os.path.join(config.saved_model_path, config_name+".pth")
-    torch.save(model.state_dict(), model_save_path)
-    print(f"Model saved at {model_save_path}")
+    if config.saved_model_path is not None:
+        print(f'Saving model to {config.saved_model_path}...')
+        os.makedirs(config.saved_model_path, exist_ok=True)
+        model_save_path = os.path.join(config.saved_model_path, config_name+".pth")
+        torch.save(model.state_dict(), model_save_path)
+        print(f"Model saved at {model_save_path}")
     
     model.eval()
     total_test_loss = 0
@@ -239,6 +242,7 @@ def main():
     test_auc_roc = roc_auc_score(all_test_labels, all_test_predictions)
     print('-----------------------------------------------------------------------------------------------------------------')
     print(f'Test Accuracy: {test_accuracy:.2f}%, Test F1-Score: {test_f1_score:.4f}, Test AUC-ROC: {test_auc_roc:.4f}')
+    print('-----------------------------------------------------------------------------------------------------------------')
 
     #logging
     if config.log_path is not None:
@@ -253,6 +257,8 @@ def main():
             writer = csv.writer(f)
             writer.writerow(["Test Loss", "Test Accuracy", "Test F1-Score", "Test AUC-ROC"])
             writer.writerow([avg_test_loss, test_accuracy, test_f1_score, test_auc_roc])
+        print(f"Logged")
+
 
 if __name__ == "__main__":
     np.random.seed(SEED)
@@ -260,7 +266,6 @@ if __name__ == "__main__":
     torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
 
     main()
-
 
 
 
