@@ -1,5 +1,7 @@
 import os
 import csv
+import argparse
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -8,63 +10,103 @@ import matplotlib.pyplot as plt
 from gensim.models import KeyedVectors
 from sklearn.metrics import f1_score, roc_auc_score
 
-from utils import EarlyStopping 
+from utils import EarlyStopping
 from utils import load_word2vec_model, create_embedding_matrix, check_word2vec_coverage  
 from preprocess import pytorch_word2vec_dataloader, pytorch_bag_of_words_dataloader
-from model.lstm import LSTM_attention, LSTMModel
+from model.lstm import LSTM_attention, LSTM_Model
 from model.logistic_regression import LogisticRegression
 
 SEED = 42
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-if __name__ == "__main__":
+def main():
+    parser = argparse.ArgumentParser(description="Run a machine learning model.")
+    parser.add_argument("--model_name", type=str, choices=['LSTM', 'LSTM_A', 'LR'], required=True, help="Type of model to use (LSTM or LSTM_A or LR)")
+    parser.add_argument("--mode", type=str, choices=['word', 'character', 'pingyin'], required=True, help="Granularity of chinese text feature")
+    parser.add_argument("--lr", type=float, default= 0.0003, help="Learning rate")
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
+    parser.add_argument("--num_epochs", type=int, default=100, help="Number of Epochs")
+    parser.add_argument("--patience", type=int, default=5, help="Early stopping patience")
+    
+    parser.add_argument("--no_stopwords", action="store_false", help="Do not use stopwords")
+    parser.add_argument("--use_w2v", action="store_true", help="Use w2v")
+    
+    parser.add_argument("--embedding_dim", type=int, default=300, help="embedding dimension of LSTM")
+    parser.add_argument("--hidden_dim", type=int, default=128, help="hidden dimension of LSTM")
+    parser.add_argument("--drop_keep_prob", type=float, default=0.2, help="drop probability of drop out")
+    parser.add_argument("--num_layers", type=int, default=2, help="drop probability of drop out")
+    parser.add_argument("--bidirectional", action="store_true", help="Use bidirectional LSTM")
+    parser.add_argument("--n_classes", type=int, default=2, help="Number of classes, e.g. binary classification: 2")
 
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
-    torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
+    args = parser.parse_args()
 
-    if Config.model_name == 'BiLSTM_A' or Config.model_name == 'LSTM':
-        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader()
-    elif Config.model_name == 'LR':
-        train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_bag_of_words_dataloader()
+    model_type = 'LSTM' if args.model_name == 'LSTM' or args.model_name == 'LSTM_A' else 'LR'    
+
+    # Load the default configuration
+    config_dir = 'configs/'
+    config_file = config_dir+'lstm_default_config.json' if model_type == 'LSTM' else config_dir+'lr_default_config.json'
+    config = Config(config_file)
+
+    # Override parameters from command line args
+    config.batch_size = args.batch_size
+    config.mode = args.mode
+    config.n_classes = args.n_classes
+    config.use_stopwords = args.no_stopwords
+    
+    if model_type == 'LSTM':
+        config.use_w2v = args.use_w2v 
+        config.embedding_dim = args.embedding_dim
+        config.hidden_dim = args.hidden_dim
+        config.drop_keep_prob = args.drop_keep_prob
+        config.num_layers = args.num_layers
+        config.bidirectional = args.bidirectional
+
+    train_dataloader, valid_dataloader, test_dataloader, vocab = pytorch_word2vec_dataloader(config) if model_type == 'LSTM' else pytorch_bag_of_words_dataloader(config)
 
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
 
-    #word2vec_model = load_word2vec_model(Config.word2vec_path)
-    #embedding_matrix = create_embedding_matrix(word2vec_model, vocab, Config.embedding_dim)
+    embedding_matrix = None
+    if model_type == 'LSTM' and config.use_w2v:
+        word2vec_model = load_word2vec_model(config.word2vec_path)
+        embedding_matrix = create_embedding_matrix(word2vec_model, vocab, config.embedding_dim)
 
-    #covered, oov = check_word2vec_coverage(vocab, word2vec_model)
-    #print(oov)
+        covered, oov = check_word2vec_coverage(vocab, word2vec_model)
+        print(oov)
+    pretrained_weight = embedding_matrix.clone() if embedding_matrix is not None else None
 
-    if Config.model_name == 'BiLSTM_A':
+    if args.model_name == 'LSTM':
+        model = LSTM_Model(vocab_size, 
+                           config.embedding_dim, 
+                           config.hidden_dim, 
+                           config.num_layers, 
+                           config.drop_keep_prob, 
+                           config.n_classes, 
+                           config.bidirectional,
+                           pretrained_weight,
+                           config.update_w2v
+                          )
+    elif args.model_name == 'LSTM_A':
         model = LSTM_attention(vocab_size, 
-                            Config.embedding_dim, 
-                            Config.hidden_dim, 
-                            Config.num_layers, 
-                            Config.drop_keep_prob, 
-                            Config.n_class, 
-                            Config.bidirectional,
-                            Config.use_pretrained
-                            #    embedding_matrix.clone 
-                            #    True, # update word2vec
-                            )
-    elif Config.model_name == 'LR':
-        model = LogisticRegression(vocab_size, Config.n_class)
-    elif Config.model_name == 'LSTM':
-        model = LSTMModel(vocab_size, 
-                          Config.embedding_dim, 
-                          Config.hidden_dim, 
-                          Config.drop_keep_prob, 
-                          Config.n_class)
+                               config.embedding_dim, 
+                               config.hidden_dim, 
+                               config.num_layers, 
+                               config.drop_keep_prob, 
+                               config.n_classes, 
+                               config.bidirectional,
+                               pretrained_weight,
+                               config.update_w2v
+                              )
+    elif args.model_name == 'LR':
+        model = LogisticRegression(vocab_size, config.n_classes)
 
     model.to(device)
     print(model)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=Config.lr)
-    num_epochs = Config.num_epochs
-    early_stopping = EarlyStopping(patience=Config.patience, delta=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    num_epochs = args.num_epochs
+    early_stopping = EarlyStopping(patience=args.patience, delta=0.001)
 
     train_losses = []
     valid_losses = []
@@ -127,7 +169,7 @@ if __name__ == "__main__":
         avg_valid_loss = total_valid_loss / len(valid_dataloader)
         valid_accuracy = (correct_predictions / total_samples) * 100.0  
 
-        early_stopping(avg_valid_loss, model)
+        early_stopping(avg_valid_loss)
         if early_stopping.early_stop:
             print("Early stopping")
             break
@@ -139,7 +181,7 @@ if __name__ == "__main__":
         train_accuracies.append(training_accuracy)
         valid_accuracies.append(valid_accuracy)
     
-    if Config.plot_graph:
+    if config.plot_graph:
         plt.figure(figsize=(10, 5))
         plt.plot(train_losses, label='Training Loss', color='blue')
         plt.plot(valid_losses, label='Validation Loss', color='red')
@@ -158,12 +200,12 @@ if __name__ == "__main__":
         plt.show()
 
     config_name = ""
-    if Config.model_name == 'LSTM' or Config.model_name == 'BiLSTM_A':
-        config_name = f"{Config.model_name}_{Config.mode}_pre?{Config.use_pretrained}_{Config.num_layers}_{Config.embedding_dim}_{Config.hidden_dim}_{Config.lr}_{epoch}"
-    elif Config.model_name == 'LR':
-        config_name = f"{Config.model_name}_{Config.mode}_{Config.lr}_{epoch}"
+    if model_type == 'LSTM':
+        config_name = f"{args.model_name}_{args.mode}_w2v:{config.use_w2v}_bi:{config.bidirectional}_layer:{config.num_layers}_emb:{config.embedding_dim}_hid:{config.hidden_dim}_{epoch}"
+    elif model_type == 'LR':
+        config_name = f"{args.model_name}_{args.mode}_{epoch}"
 
-    model_save_path = os.path.join(Config.saved_model_path, config_name+".pth")
+    model_save_path = os.path.join(config.saved_model_path, config_name+".pth")
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved at {model_save_path}")
     
@@ -198,17 +240,28 @@ if __name__ == "__main__":
     print('-----------------------------------------------------------------------------------------------------------------')
     print(f'Test Accuracy: {test_accuracy:.2f}%, Test F1-Score: {test_f1_score:.4f}, Test AUC-ROC: {test_auc_roc:.4f}')
 
-    # Save log if logdir provided
-    if Config.log_path is not None:
-        print(f'Writing training logs to {Config.log_path}...')
-        os.makedirs(Config.log_path, exist_ok=True)
-        with open(os.path.join(Config.log_path, config_name + '_train_results.csv'), 'w', newline='') as f:
+    #logging
+    if config.log_path is not None:
+        print(f'Writing training logs to {config.log_path}...')
+        os.makedirs(config.log_path, exist_ok=True)
+        with open(os.path.join(config.log_path, config_name + '_train_results.csv'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(["Epoch", "Train Loss", "Valid Loss", "Train Accuracy", "Valid Accuracy"])
             for epoch in range(len(train_losses)):
                 writer.writerow([epoch+1, train_losses[epoch], valid_losses[epoch], train_accuracies[epoch], valid_accuracies[epoch]])
-        with open(os.path.join(Config.log_path, config_name + '_test_results.csv'), 'w', newline='') as f:
+        with open(os.path.join(config.log_path, config_name + '_test_results.csv'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(["Test Loss", "Test Accuracy", "Test F1-Score", "Test AUC-ROC"])
             writer.writerow([avg_test_loss, test_accuracy, test_f1_score, test_auc_roc])
+
+if __name__ == "__main__":
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)
+
+    main()
+
+
+
+
 

@@ -2,8 +2,6 @@ import pandas as pd
 import jieba
 import pinyin
 
-from config import Config
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 from collections import Counter
@@ -50,7 +48,7 @@ def stopwordslist(filepath):
     stopwords = [line.strip() for line in open(filepath, encoding="UTF-8").readlines()]
     return stopwords
 
-def preprocess_text(text, stopwords, mode=Config.mode):
+def preprocess_text(text, stopwords, mode):
 
     if not isinstance(text, str):
         text = str(text)
@@ -65,13 +63,23 @@ def preprocess_text(text, stopwords, mode=Config.mode):
         tokens = pinyin.get(text, format="strip", delimiter=" ").split()
     else:
         raise CustomError("Wrong mode")
-
-
-    tokens = [token for token in tokens if token not in stopwords]
+    
+    # tmp = tokens
+    # length = len(tmp)
+    if stopwords is not None:
+        tokens = [token for token in tokens if token.strip() and token not in stopwords]
+    # if len(tokens) < length:
+    #     print("old")
+    #     print(tmp)
+    #     print("new")
+    #     print(tokens)
+        
+    if len(' '.join(tokens).split()) == 0:
+        tokens = ['<UNK>']
 
     return ' '.join(tokens)
 
-def pytorch_word2vec_dataloader():
+def pytorch_word2vec_dataloader(config):
     """
     This function creates and returns PyTorch dataloaders for word2vec training.
     
@@ -81,20 +89,21 @@ def pytorch_word2vec_dataloader():
     test_dataloader (torch.utils.data.DataLoader): Dataloader for test data.
     vocab (list): List of unique words in the dataset.
     """
-    dataframe = pd.read_csv(Config.dataset_path)
+    dataframe = pd.read_csv(config.dataset_path)
     data_dict = dataframe.to_dict(orient='records')
 
-    stopwords = stopwordslist(Config.stopword_path)
+    stopwords = None
+    if config.use_stopwords:
+        stopwords = stopwordslist(config.stopword_path)
     for entry in data_dict:
-        entry['processed_review'] = preprocess_text(entry['review'], stopwords)
-
+        entry['processed_review'] = preprocess_text(entry['review'], stopwords, config.mode)
     vocab = create_vocab(data_dict)
     dataset = Word2VecTextDataset(data_dict, vocab)
     train_data, valid_data, test_data = split_dataset(dataset)
 
-    train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
-    valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
-    test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
+    train_dataloader = DataLoader(train_data, batch_size=config.batch_size, collate_fn=lstm_collate_batch)
+    valid_dataloader = DataLoader(valid_data, batch_size=config.batch_size, collate_fn=lstm_collate_batch)
+    test_dataloader = DataLoader(test_data, batch_size=config.batch_size, collate_fn=lstm_collate_batch)
 
     return train_dataloader, valid_dataloader, test_dataloader, vocab
 
@@ -122,21 +131,23 @@ def bag_of_words_collate_batch(batch):
     sequences, labels = zip(*batch)
     return torch.stack(sequences), torch.stack(labels)
 
-def pytorch_bag_of_words_dataloader():
-    dataframe = pd.read_csv(Config.dataset_path)
+def pytorch_bag_of_words_dataloader(config):
+    dataframe = pd.read_csv(config.dataset_path)
     data_dict = dataframe.to_dict(orient='records')
 
-    stopwords = stopwordslist(Config.stopword_path)
+    stopwords = None
+    if config.use_stopwords:
+        stopwords = stopwordslist(config.stopword_path)
     for entry in data_dict:
-        entry['processed_review'] = preprocess_text(entry['review'], stopwords)
+        entry['processed_review'] = preprocess_text(entry['review'], stopwords, config.mode)
 
     vectorizer = create_vectorizer(data_dict)
     dataset = BagOfWordsTextDataset(data_dict, vectorizer)
     train_data, valid_data, test_data = split_dataset(dataset)
 
-    train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
-    valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
-    test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=bag_of_words_collate_batch)
+    train_dataloader = DataLoader(train_data, batch_size=config.batch_size, collate_fn=bag_of_words_collate_batch)
+    valid_dataloader = DataLoader(valid_data, batch_size=config.batch_size, collate_fn=bag_of_words_collate_batch)
+    test_dataloader = DataLoader(test_data, batch_size=config.batch_size, collate_fn=bag_of_words_collate_batch)
 
     return train_dataloader, valid_dataloader, test_dataloader, vectorizer.get_feature_names_out()
 

@@ -1,0 +1,24 @@
+{
+    "mode": "word",
+
+    "use_stopwords": true,
+    
+    "batch_size": 256,
+
+    "use_w2v": false,
+    "update_w2v": true,
+    "embedding_dim": 300,
+    "hidden_dim": 128,
+    "drop_keep_prob": 0.2,
+    "num_layers": 2,
+    "bidirectional": true,
+    "n_classes": 2,
+
+    "plot_graph": false,
+
+    "word2vec_path": "pretrained/...",
+    "stopword_path": "data/stopword.txt",
+    "dataset_path": "data/online_shopping_10_cats.csv",
+    "saved_model_path": "save",
+    "log_path": "log"
+}
