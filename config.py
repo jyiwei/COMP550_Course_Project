@@ -1,7 +1,7 @@
 
 
 class Config:
-    model_name = 'BiLSTM_A' # LR
+    model_name = 'BiLSTM_A' # LR #LSTM
     update_w2v = True  
     #vocab_size = 68419  
     n_class = 2  
@@ -14,10 +14,10 @@ class Config:
     drop_keep_prob = 0.2  
     num_layers = 2  
     bidirectional = True  
-    mode = 'pingyin' # word # character # pingyin 
+    mode = 'word' # word # character # pingyin 
     patience = 5
     #pretrained_model
-    word2vec_path = 'pretrained/wiki_word2vec_50.bin'
+    word2vec_path = 'pretrained/...'
     # when use word, you can use the pretrained model
     use_pretrained = False
 
@@ -29,3 +29,6 @@ class Config:
 
     # Save model path
     saved_model_path = 'save'
+
+    # Log path
+    log_path = 'log'

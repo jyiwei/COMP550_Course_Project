@@ -1,4 +1,5 @@
 import os
+import csv
 import torch
 import torch.nn as nn
 import numpy as np
@@ -67,6 +68,7 @@ if __name__ == "__main__":
 
     train_losses = []
     valid_losses = []
+    train_accuracies = []
     valid_accuracies = []
 
     for epoch in range(num_epochs):
@@ -96,7 +98,6 @@ if __name__ == "__main__":
             total_samples += labels.size(0)
 
         avg_train_loss = total_train_loss / len(train_dataloader)
-        train_losses.append(avg_train_loss)
 
         # Calculate training accuracy for this epoch
         training_accuracy = correct_predictions / total_samples * 100.0  
@@ -125,7 +126,6 @@ if __name__ == "__main__":
 
         avg_valid_loss = total_valid_loss / len(valid_dataloader)
         valid_accuracy = (correct_predictions / total_samples) * 100.0  
-        valid_losses.append(avg_valid_loss)
 
         early_stopping(avg_valid_loss, model)
         if early_stopping.early_stop:
@@ -136,6 +136,7 @@ if __name__ == "__main__":
 
         train_losses.append(avg_train_loss)
         valid_losses.append(avg_valid_loss)
+        train_accuracies.append(training_accuracy)
         valid_accuracies.append(valid_accuracy)
     
     if Config.plot_graph:
@@ -156,7 +157,12 @@ if __name__ == "__main__":
 
         plt.show()
 
-    model_save_path = os.path.join(Config.saved_model_path, f"{Config.model_name}_{Config.mode}_{Config.lr}_{epoch}_{Config.num_layers}.pth")
+    if Config.model_name == "LSTM" or "BiLSTM_A":
+        config_name = f"{Config.model_name}_{Config.mode}_pre?{Config.use_pretrained}_{Config.num_layers}_{Config.embedding_dim}_{Config.hidden_dim}_{Config.lr}_{epoch}"
+    elif Config.model_name == "LR":
+        config_name = f"{Config.model_name}_{Config.mode}_{Config.lr}_{epoch}"
+
+    model_save_path = os.path.join(Config.saved_model_path, config_name+".pth")
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved at {model_save_path}")
     
@@ -190,3 +196,18 @@ if __name__ == "__main__":
     test_auc_roc = roc_auc_score(all_test_labels, all_test_predictions)
     print('-----------------------------------------------------------------------------------------------------------------')
     print(f'Test Accuracy: {test_accuracy:.2f}%, Test F1-Score: {test_f1_score:.4f}, Test AUC-ROC: {test_auc_roc:.4f}')
+
+    # Save log if logdir provided
+    if Config.log_path is not None:
+        print(f'Writing training logs to {Config.log_path}...')
+        os.makedirs(Config.log_path, exist_ok=True)
+        with open(os.path.join(Config.log_path, config_name + '_train_results.csv'), 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Epoch", "Train Loss", "Valid Loss", "Train Accuracy", "Valid Accuracy"])
+            for epoch in range(len(train_losses)):
+                writer.writerow([epoch+1, train_losses[epoch], valid_losses[epoch], train_accuracies[epoch], valid_accuracies[epoch]])
+        with open(os.path.join(Config.log_path, config_name + '_test_results.csv'), 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Test Loss", "Test Accuracy", "Test F1-Score", "Test AUC-ROC"])
+            writer.writerow([avg_test_loss, test_accuracy, test_f1_score, test_auc_roc])
+
