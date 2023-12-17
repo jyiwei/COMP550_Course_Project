@@ -157,9 +157,10 @@ if __name__ == "__main__":
 
         plt.show()
 
-    if Config.model_name == "LSTM" or "BiLSTM_A":
+    config_name = ""
+    if Config.model_name == 'LSTM' or Config.model_name == 'BiLSTM_A':
         config_name = f"{Config.model_name}_{Config.mode}_pre?{Config.use_pretrained}_{Config.num_layers}_{Config.embedding_dim}_{Config.hidden_dim}_{Config.lr}_{epoch}"
-    elif Config.model_name == "LR":
+    elif Config.model_name == 'LR':
         config_name = f"{Config.model_name}_{Config.mode}_{Config.lr}_{epoch}"
 
     model_save_path = os.path.join(Config.saved_model_path, config_name+".pth")
