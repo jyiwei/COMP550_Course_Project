@@ -1,6 +1,7 @@
 pretrained/
 __pycache__/
 save/
+log/
 .DS_Store
 myenv/
 radical.py
