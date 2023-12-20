@@ -1,0 +1,12 @@
+\section{Discussion and Conclusion}
+
+Our results indicate that, specifically for tasks defined on the chosen dataset, character-level and word-level features are equally sufficient. For neural network models, word-level features are slightly advantageous due to the availability of pretrained embeddings with rich semantics. We observe that while pretrained w2v-embeddings for Chinese words improve model performance, those for characters lead to a slight performance drop. We hypothesize that this is due to the fact that semantics encoded in individual Chinese characters are more ambiguous compared to whole words, as the meanings of constituent characters within a word can significantly differ from overall semantics of the word itself.
+
+For LR trained with bag-of-word features, word and character-bigram are optimal. In general, these low-granular features induce sparsity in the transformed high-dimensional features space resulting in linearly separable clusters for each class.  
+
+Surprisingly, despite the low resolution of toneless-pinyin, with less than 1000 unique tokens, models can obtain adequate results with less than 10\% difference in performance compared to the best performing model. This shows that text classification and sentiment analysis do not rely on fine semantics on our dataset.  
+
+\subsection{Limitation and Future Work}
+The main limitation of our study is its restriction to a single dataset. The tasks on this dataset might not be adequately challenging for the purpose of our investigation. As LR results in Table \ref{table:model_performance_sentiment} and \ref{table:model_performance_text} indicate, the classes for each task are linearly separable. Furthering our study on other datasets is crucial since we hypothesize that models' performance based on different feature granularity is task and dataset dependent. Another limitation is that the pretrained word2vec model we utilized covers only about 70\% of the word-level tokens. We intend to explore additional pretrained word2vec models to enhance our word and character features. 
+
+% Additionally, we did not address the running time associated with different tokenization schemes. This aspect is crucial, especially when applying these methods to much larger datasets, due to the significant computational costs involved.
