@@ -13,16 +13,23 @@ def split_dataset(data_dict, train_ratio=0.7, valid_ratio=0.15, test_ratio=0.15)
 
 
 def load_word2vec_model(model_path):
-    word2vec_model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+    word2vec_model = KeyedVectors.load_word2vec_format(model_path)
     return word2vec_model
 
 def create_embedding_matrix(word2vec_model, vocab, embedding_dim):
-    embedding_matrix = np.zeros((len(vocab), embedding_dim))
-    for word, idx in vocab.items():
+    embedding_matrix = np.random.normal(size=(len(vocab), embedding_dim))
+
+    for word, idxs in vocab.items():
         if word in word2vec_model:
             embedding_vector = word2vec_model[word]
-            embedding_matrix[idx] = embedding_vector
+            embedding_matrix[idxs] = embedding_vector
+
     return torch.tensor(embedding_matrix, dtype=torch.float)
+
+def create_label_mapping(dataframe):
+    unique_labels = dataframe['cat'].unique()
+    label_to_index = {label: idx for idx, label in enumerate(unique_labels)}
+    return label_to_index
 
 class CustomError(Exception):
     def __init__(self, message):
@@ -37,7 +44,7 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
-    def __call__(self, val_loss, model):
+    def __call__(self, val_loss):
         score = -val_loss
 
         if self.best_score is None:

@@ -1,0 +1,89 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+
+\documentclass[11pt]{article}
+
+% Remove the "review" option to generate the final version.
+\usepackage[review]{ACL2023}
+%\usepackage[anonymous]{ACL2023}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{graphicx} 
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out.
+% However, it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+\usepackage{multirow}
+
+% If the title and author information does not fit in the area allocated, uncomment the following
+%
+\setlength\titlebox{5cm}
+
+%
+% and set <dim> to something 5cm or larger.
+\begin{document}
+
+\title{COMP550 Project Report: Comparative Analysis of Chinese Word Segmentation in Sentiment Analysis and Text Classification\thanks{ChatGPT was used for correcting grammatical errors and refining this report. No content is AI generated.}}
+\author{Zihan Wang \\
+  %Department of Electrical Engineering\\
+  McGill University\\
+  \texttt{zihan.wang5@mail.mcgill.ca} \\
+  \And
+  Jack Wei \\
+  %Department of Electrical Engineering\\
+  McGill University\\
+  \texttt{yi.wei4@mail.mcgill.ca} \\
+  \And
+  Xijuan Sun \\
+  %Department of Electrical Engineering\\
+  McGill University\\
+  \texttt{xijuan.sun@mail.mcgill.ca} \\
+  }
+
+\maketitle
+
+\begin{abstract}
+This project explores the complexity of Chinese text analysis, evaluating the efficacy of different tokenization approaches (character, word, pinyin) and the inclusion of bigrams at the character level in text classification and sentiment analysis. This study also examines the effect of stopwords removal and how the pre-trained word2vec embeddings enhance models' performance measured by accuracy and F1 score. Logistic Regression (LR) and Long Short-Term Memory (LSTM) networks, along with their variants, are tested on the \textit{onlineshopping10cats} dataset. Our results indicate that for LSTM models with distributed representation, word-level and character-level tokenization offer comparable performance in sentiment analysis and text classification. Conversely, logistic regression models utilizing bag-of-words features perform best with lower-granularity tokens like words and character bigrams.
+\end{abstract}
+
+\input{Introduction}
+
+\input{RelatedWork}
+
+
+\input{Method}
+
+\input{Results}
+
+\input{Discussion}
+
+\input{Contribution}
+
+
+
+
+% Entries for the entire Anthology, followed by custom entries
+\bibliography{anthology,custom}
+\bibliographystyle{acl_natbib}
+
+
+\end{document}

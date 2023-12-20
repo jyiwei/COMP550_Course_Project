@@ -1,0 +1,100 @@
+\section{Results}
+% In this section, we present experimental results of LR and LSTM models for sentiment analysis and text classification, conducted on the onlineshopping10cats dataset.
+
+We present the accuracy and F1 scores for LR and LSTM models under the tokenization schemes of character, character-bigram, word and pinyin in Table~\ref{table:model_performance_sentiment} and ~\ref{table:model_performance_text}. Additionally, we examine the effects of stopword removal and the incorporation of pretrained word2vec embeddings on the models' performance across these tokenization schemes. The full results, encompassing a parametric analysis of models' hyperparameters, are included in \emph{results.xlsx}, which can be found in our GitHub repository. Due to page limitation, we provide only the best results for stopword removal, one for each pair of model and tokenization scheme. The results for Bi-LSTM\_A are omitted as well as they are similar to those of the standard BiLSTM. Our source code is available in our GitHub repository\footnote{https://github.com/jyiwei/COMP550\_Course\_Project}.
+
+
+\begin{table*}[ht]
+\centering
+\begin{tabular}{l l c c c c}
+\hline
+\textbf{Model} & \textbf{Tokenization} & \textbf{Stopword Removal} & \textbf{Vocab Size} & \textbf{Accuracy} & \textbf{F1 Score} \\ 
+\hline
+\hline
+LR & Character & No & 4,694 & 88.10\% & 88.22\% \\
+LR & Character-Bigram & No & 267,105 & \textbf{89.44\%} & \textbf{89.55\%} \\
+LR & Word & No & 67,210 & 89.38\% & 89.50\% \\
+LR & Pinyin & No & 501 & 80.58\% & 81.08\% \\
+\hline
+\hline
+BiLSTM & \multirow{2}{*}{Character} & Yes & 4,863 & 87.36\% & 87.60\% \\
+BiLSTM-w2v &  & Yes & 4,863 & 87.04\% & 87.02\% \\
+\hline
+BiLSTM & \multirow{2}{*}{Character-Bigram} & No & 304,936 & 83.05\% & 82.73\% \\
+BiLSTM-w2v & & No & 304,936 & 82.16\% & 82.08\% \\
+\hline
+BiLSTM & \multirow{2}{*}{Word} & Yes & 67,869 & 85.45\% & 85.60\% \\
+BiLSTM-w2v & & No & 68,495 & \textbf{87.60\%} & \textbf{87.71\%} \\
+\hline
+BiLSTM & Pinyin & Yes & 677 & 84.45\% & 84.68\% \\
+\hline
+\end{tabular}
+\caption{Performance Comparison of LR and BiLSTM Models Using Various Tokenization Methods and Stopword Settings on \textit{OnlineShopping10cats} Dataset for Text Classification}
+\label{table:model_performance_text}
+\end{table*}
+
+
+% \begin{table*}[ht]
+% \centering
+% \begin{tabular}{c c c c c c}
+% \hline
+% \textbf{Model}&\textbf{Tokenization}&\textbf{Stopwords Removal}&\textbf{Vocab Size}&\textbf{Accuracy} &\textbf{F1} \\ \hline
+% LR & character & No & 4694 & 88.1 & 88.22  \\ 
+% \hline
+% LR & character-bigram & No & 267105 & 89.44 & 89.55 \\ \hline
+% LR & word & No & 67210 & 89.38 & 89.50 \\ 
+% \hline
+% LR & pinyin & No & 501 & 80.58 & 81.08\\ 
+% \hline
+% BiLSTM & character & Yes & 4863 & 87.36 & 87.60 \\ 
+% BiLSTM-w2v & character & Yes & 4863 & 87.04 & 87.02  \\ 
+% \hline
+% BiLSTM & character-bigram & No & 304936 & 83.05 & 82.73 \\
+% BiLSTM-w2v & character-bigram & No & 304936 & 82.16 & 82.08\\ 
+% \hline
+% BiLSTM & word & Yes & 67869 & 85.45 & 85.60 \\ 
+% BiLSTM-w2v & word & No & 68495 & 87.60 & 87.71 \\ 
+% \hline
+% BiLSTM & pinyin & Yes & 677 & 84.45 & 84.68 \\ 
+% \hline
+% \end{tabular}
+% \caption{Best-Performing Accuracy and F1 of LR, BiLSTM, and BiLSTM\_A models across different tokenization schemes, stopword removal Settings, and the incorporation of pretrained word2vec embeddings on the Onlineshopping10cats dataset for text classification}
+% \label{table:model_performance_sentiment}
+% \end{table*}
+
+% \begin{table*}[ht]
+% \centering
+% \begin{tabular}{c c c c c c}
+% \hline
+% \textbf{Model}&\textbf{Tokenization}&\textbf{Stopwords Removal}&\textbf{Vocab Size}&\textbf{Accuracy} &\textbf{F1} \\ \hline
+% LR & character & No & 4694 & 88.1 & 88.22  \\ 
+% \hline
+% LR & character-bigram & No & 267105 & 89.44 & 89.55 \\ \hline
+% LR & word & No & 67210 & 89.38 & 89.50 \\ 
+% \hline
+% LR & pinyin & No & 501 & 80.58 & 81.08\\ 
+% \hline
+% BiLSTM & character & Yes & 4863 & 87.36 & 87.60 \\ 
+% BiLSTM-w2v & character & Yes & 4863 & 87.04 & 87.02  \\ 
+% \hline
+% BiLSTM & character-bigram & No & 304936 & 83.05 & 82.73 \\
+% BiLSTM-w2v & character-bigram & No & 304936 & 82.16 & 82.08\\ 
+% \hline
+% BiLSTM & word & Yes & 67869 & 85.45 & 85.60 \\ 
+% BiLSTM-w2v & word & No & 68495 & 87.60 & 87.71 \\ 
+% \hline
+% BiLSTM & pinyin & Yes & 677 & 84.45 & 84.68 \\ 
+% \hline
+% \end{tabular}
+% \caption{Best-Performing Accuracy and F1 of LR, BiLSTM, and BiLSTM\_A models across different tokenization schemes, stopword removal Settings, and the incorporation of pretrained word2vec embeddings on the Onlineshopping10cats dataset for text classification}
+% \label{table:model_performance_sentiment}
+% \end{table*}
+
+\subsection{Sentiment Analysis}
+
+We observe that the results are comparable across all tokenization schemes for sentiment analysis. For the LR model with bag-of-words features, the model performs better with low-granular features such as word and character-bigram compared to features constructed from character and pinyin. In contrast, for neural models trained with distributed representations, the performance is robust to different tokenization schemes with the LSTM trained on character-level features slightly outperforming the ones fed with other features without pretrained word embeddings. When initialized with word2vec embeddings, the character-level LSTM model shows no improvements, while the word-level LSTM model exhibits a slight enhancement in performance.
+
+The worst performing model is LR trained on toneless pinyin features with more than 5\% drop in accuracy and F1 score compared to other tokenization schemes. The large drop in performance for pinyin features is not observed in neural network models.
+
+\subsection{Text Classification}
+The results for text classification is highly similar to those of sentiment analysis with analogous patterns. The LR model performs optimally under low-granular features and only exhibits a large performance drop when trained with pinyin features. In comparison, the performance of LSTM trained with character features is the highest without word2vec embeddings. Equipped with word2vec, the performance of word-level LSTM is comparable to character-level LSTM. Specifically for text classification, character-bigram features result in a large performance drop for LSTM.  
