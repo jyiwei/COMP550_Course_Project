@@ -1,0 +1,17 @@
+{
+    "class_sentiment": true,
+
+    "mode": "word",
+    "use_stopwords": true,
+
+    "batch_size": 256,
+
+    "n_classes": 2,
+
+    "plot_graph": false,
+
+    "stopword_path": "data/stopword.txt",
+    "dataset_path": "data/online_shopping_10_cats.csv",
+    "saved_model_path": "save",
+    "log_path": "log"
+}
