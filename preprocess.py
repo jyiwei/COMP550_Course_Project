@@ -6,18 +6,19 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from collections import Counter
 from torch.nn.utils.rnn import pad_sequence
-from gensim.models import KeyedVectors
+# from gensim.models import KeyedVectors
 
 #from transformers import BertTokenizer, BertForSequenceClassification
-from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
+from torch.nn.utils.rnn import pad_sequence
 
-from utils import split_dataset, CustomError
+from utils import split_dataset, create_label_mapping, CustomError
 from sklearn.feature_extraction.text import CountVectorizer
 
 class Word2VecTextDataset(Dataset):
-    def __init__(self, data_dict, vocab):
+    def __init__(self, data_dict, vocab, label_mapping = None):
         self.data = data_dict
         self.vocab = vocab
+        self.label_mapping = label_mapping
 
     def __len__(self):
         return len(self.data)
@@ -25,15 +26,25 @@ class Word2VecTextDataset(Dataset):
     def __getitem__(self, idx):
         entry = self.data[idx]
         text_indices = [self.vocab.get(token, self.vocab['<UNK>']) for token in entry['processed_review'].split()]
-        return torch.tensor(text_indices), torch.tensor(entry['label'])
+        if self.label_mapping is not None:
+            numerical_label = self.label_mapping[entry['cat']]
+            labels = torch.tensor(numerical_label)
+        else:
+            labels = torch.tensor(entry['label'])
+
+        return torch.tensor(text_indices), labels
 
 def create_vocab(data_dict):
     all_tokens = [token for entry in data_dict for token in entry['processed_review'].split()]
     vocab = Counter(all_tokens)
-    vocab = {word: idx for idx, (word, _) in enumerate(vocab.items(), start=2)} 
-    vocab['<PAD>'] = 0  
-    vocab['<UNK>'] = 1 
-    return vocab
+    vocab_dict = {'<PAD>': 0, '<UNK>': 1}
+
+    current_index = 2
+    for word in vocab.keys():
+        if word not in vocab_dict:
+            vocab_dict[word] = current_index
+            current_index += 1
+    return vocab_dict
 
 def lstm_collate_batch(batch):
     batch.sort(key=lambda x: len(x[0]), reverse=True)
@@ -53,26 +64,23 @@ def preprocess_text(text, stopwords, mode):
     if not isinstance(text, str):
         text = str(text)
 
-    tokens = []
+    word_tokens = jieba.lcut(text)
+
+    if stopwords is not None:
+        word_tokens = [token for token in word_tokens if token.strip() and token not in stopwords]
 
     if mode == 'word':
-        tokens = jieba.lcut(text)
+        tokens = word_tokens
     elif mode == 'character':
-        tokens = [char for char in text]
-    elif mode == 'pingyin':
-        tokens = pinyin.get(text, format="strip", delimiter=" ").split()
+        tokens = [char for token in word_tokens for char in token]
+    elif mode == 'character_bigram':
+        all_chars = ''.join(word_tokens) 
+        tokens = [all_chars[i:i+2] for i in range(len(all_chars) - 1)]
+    elif mode == 'pinyin':
+        tokens = [pinyin.get(token, format="strip", delimiter=" ") for token in word_tokens]
+        tokens = ' '.join(tokens).split()  # Flattening the list of pinyin strings
     else:
-        raise CustomError("Wrong mode")
-    
-    # tmp = tokens
-    # length = len(tmp)
-    if stopwords is not None:
-        tokens = [token for token in tokens if token.strip() and token not in stopwords]
-    # if len(tokens) < length:
-    #     print("old")
-    #     print(tmp)
-    #     print("new")
-    #     print(tokens)
+        raise ValueError("Wrong mode")
         
     if len(' '.join(tokens).split()) == 0:
         tokens = ['<UNK>']
@@ -98,7 +106,12 @@ def pytorch_word2vec_dataloader(config):
     for entry in data_dict:
         entry['processed_review'] = preprocess_text(entry['review'], stopwords, config.mode)
     vocab = create_vocab(data_dict)
-    dataset = Word2VecTextDataset(data_dict, vocab)
+    
+    label_mapping = None
+    if config.n_classes > 2:
+        label_mapping = create_label_mapping(dataframe)
+    dataset = Word2VecTextDataset(data_dict, vocab, label_mapping)
+
     train_data, valid_data, test_data = split_dataset(dataset)
 
     train_dataloader = DataLoader(train_data, batch_size=config.batch_size, collate_fn=lstm_collate_batch)
@@ -108,9 +121,10 @@ def pytorch_word2vec_dataloader(config):
     return train_dataloader, valid_dataloader, test_dataloader, vocab
 
 class BagOfWordsTextDataset(Dataset):
-    def __init__(self, data_dict, vectorizer):
+    def __init__(self, data_dict, vectorizer, label_mapping = None):
         self.data = data_dict
         self.vectorizer = vectorizer
+        self.label_mapping = label_mapping
 
     def __len__(self):
         return len(self.data)
@@ -119,7 +133,12 @@ class BagOfWordsTextDataset(Dataset):
         entry = self.data[idx]
         text = entry['processed_review']
         vector = self.vectorizer.transform([text]).toarray()
-        return torch.tensor(vector.flatten()), torch.tensor(entry['label'])
+        if self.label_mapping is not None:
+            numerical_label = self.label_mapping[entry['cat']]
+            labels = torch.tensor(numerical_label)
+        else:
+            labels = torch.tensor(entry['label'])
+        return torch.tensor(vector.flatten()), labels
 
 def create_vectorizer(data_dict):
     texts = [entry['processed_review'] for entry in data_dict]
@@ -142,7 +161,11 @@ def pytorch_bag_of_words_dataloader(config):
         entry['processed_review'] = preprocess_text(entry['review'], stopwords, config.mode)
 
     vectorizer = create_vectorizer(data_dict)
-    dataset = BagOfWordsTextDataset(data_dict, vectorizer)
+
+    label_mapping = None
+    if config.n_classes > 2:
+        label_mapping = create_label_mapping(dataframe)
+    dataset = BagOfWordsTextDataset(data_dict, vectorizer, label_mapping)
     train_data, valid_data, test_data = split_dataset(dataset)
 
     train_dataloader = DataLoader(train_data, batch_size=config.batch_size, collate_fn=bag_of_words_collate_batch)
@@ -151,61 +174,6 @@ def pytorch_bag_of_words_dataloader(config):
 
     return train_dataloader, valid_dataloader, test_dataloader, vectorizer.get_feature_names_out()
 
-###########################################################################################
-###########################################################################################
-###########################################################################################
-###########################################################################################
-"""
-class BERTTextDataset(Dataset):
-    def __init__(self, data_dict, bert_model_name='bert-base-uncased'):
-        self.data = data_dict
-        self.tokenizer = BertTokenizer.from_pretrained(bert_model_name)
-
-#     def __len__(self):
-#         return len(self.data)
-
-#     def __getitem__(self, idx):
-#         entry = self.data[idx]
-#         encoding = self.tokenizer.encode_plus(
-#             entry['processed_review'],
-#             add_special_tokens=True,
-#             max_length=512,
-#             return_token_type_ids=False,
-#             padding='max_length',
-#             truncation=True,
-#             return_attention_mask=True,
-#             return_tensors='pt',
-#         )
-#         return {
-#             'input_ids': encoding['input_ids'].flatten(),
-#             'attention_mask': encoding['attention_mask'].flatten(),
-#             'labels': torch.tensor(entry['label'])
-#         }
-
-# def bert_collate_batch(batch):
-#     input_ids = torch.stack([item['input_ids'] for item in batch])
-#     attention_masks = torch.stack([item['attention_mask'] for item in batch])
-#     labels = torch.stack([item['labels'] for item in batch])
-#     return input_ids, attention_masks, labels
-
-# def pytorch_bert_dataloader():
-#     dataframe = pd.read_csv(Config.dataset_path)
-#     data_dict = dataframe.to_dict(orient='records')
-
-#     stopwords = stopwordslist(Config.stopword_path)
-#     for entry in data_dict:
-#         entry['processed_review'] = preprocess_text(entry['review'], stopwords)
-        
-#     dataset = BERTTextDataset(data_dict)
-#     train_data, valid_data, test_data = split_dataset(dataset)
-
-#     train_dataloader = DataLoader(train_data, batch_size=Config.batch_size, collate_fn=bert_collate_batch)
-#     valid_dataloader = DataLoader(valid_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
-#     test_dataloader = DataLoader(test_data, batch_size=Config.batch_size, collate_fn=lstm_collate_batch)
-
-#     return train_dataloader, valid_dataloader, test_dataloader
-
-"""
 if __name__ == "__main__":
     dataloader = pytorch_word2vec_dataloader()
     it = iter(dataloader)
@@ -213,4 +181,3 @@ if __name__ == "__main__":
     second = next(it)
     print(first)
     print(second)
-

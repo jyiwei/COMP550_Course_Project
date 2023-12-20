@@ -3,6 +3,7 @@ import csv
 import argparse
 
 import torch
+import random
 import torch.nn as nn
 import numpy as np
 from config import Config
@@ -22,11 +23,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def main():
     parser = argparse.ArgumentParser(description="Run a machine learning model.")
     parser.add_argument("--model_name", type=str, choices=['LSTM', 'LSTM_A', 'LR'], required=True, help="Type of model to use (LSTM or LSTM_A or LR)")
-    parser.add_argument("--mode", type=str, choices=['word', 'character', 'pingyin'], required=True, help="Granularity of chinese text feature")
-    parser.add_argument("--lr", type=float, default= 0.0003, help="Learning rate")
+    parser.add_argument("--mode", type=str, choices=['word', 'character', 'character_bigram', 'pinyin'], required=True, help="Granularity of chinese text feature")
+    parser.add_argument("--lr", type=float, default= 0.0001, help="Learning rate")
     parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
     parser.add_argument("--num_epochs", type=int, default=100, help="Number of Epochs")
-    parser.add_argument("--patience", type=int, default=5, help="Early stopping patience")
+    parser.add_argument("--patience", type=int, default=3, help="Early stopping patience")
     
     parser.add_argument("--no_stopwords", action="store_false", help="Do not use stopwords")
     parser.add_argument("--use_w2v", action="store_true", help="Use w2v")
@@ -66,13 +67,19 @@ def main():
     vocab_size = len(vocab)
     print(f"Vocab size is {vocab_size}")
 
+    # sorted_vocab = sorted(vocab.items(), key=lambda x: x[1], reverse=True)
+
+    # for word, index in sorted_vocab:
+    #     print(f"{word}:{index}")
+    #     break
+
     embedding_matrix = None
     if model_type == 'LSTM' and config.use_w2v:
         word2vec_model = load_word2vec_model(config.word2vec_path)
         embedding_matrix = create_embedding_matrix(word2vec_model, vocab, config.embedding_dim)
 
         covered, oov = check_word2vec_coverage(vocab, word2vec_model)
-        print(oov)
+        #print(oov)
     pretrained_weight = embedding_matrix.clone() if embedding_matrix is not None else None
 
     if args.model_name == 'LSTM':
@@ -201,9 +208,9 @@ def main():
 
     config_name = ""
     if model_type == 'LSTM':
-        config_name = f"{args.model_name}_{args.mode}_w2v:{config.use_w2v}_bi:{config.bidirectional}_layer:{config.num_layers}_emb:{config.embedding_dim}_hid:{config.hidden_dim}_{epoch}"
+        config_name = f"{args.model_name}_{args.mode}_sw:{config.use_stopwords}_w2v:{config.use_w2v}_bi:{config.bidirectional}_layer:{config.num_layers}_emb:{config.embedding_dim}_hid:{config.hidden_dim}_{epoch}"
     elif model_type == 'LR':
-        config_name = f"{args.model_name}_{args.mode}_{epoch}"
+        config_name = f"{args.model_name}_{args.mode}_sw:{config.use_stopwords}_{epoch}"
 
     if config.saved_model_path is not None:
         print(f'Saving model to {config.saved_model_path}...')
@@ -216,6 +223,8 @@ def main():
     total_test_loss = 0
     all_test_labels = []
     all_test_predictions = []
+    all_test_probabilities = []
+
     try:
         for batch in test_dataloader:
                 padded_sequence, labels = batch
@@ -226,11 +235,14 @@ def main():
 
                 total_test_loss += loss.item()
 
-                _, predicted = torch.max(outputs, 1)  
+                _, predicted = torch.max(outputs, 1) 
+                probabilities = torch.nn.functional.softmax(outputs, dim=1)
+ 
                 total_samples += labels.size(0)
                 correct_predictions += (predicted == labels).sum().item()
                 all_test_labels.extend(labels.cpu().numpy())
                 all_test_predictions.extend(predicted.cpu().numpy())
+                all_test_probabilities.extend(probabilities.cpu().detach().numpy())
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
@@ -239,7 +251,11 @@ def main():
     test_accuracy = (correct_predictions / total_samples) * 100.0  
 
     test_f1_score = f1_score(all_test_labels, all_test_predictions, average='weighted')
-    test_auc_roc = roc_auc_score(all_test_labels, all_test_predictions)
+    if config.n_classes > 2:
+        test_auc_roc = roc_auc_score(all_test_labels, all_test_probabilities, multi_class="ovr")
+    elif config.n_classes == 2:
+        test_auc_roc = roc_auc_score(all_test_labels, all_test_predictions)
+
     print('-----------------------------------------------------------------------------------------------------------------')
     print(f'Test Accuracy: {test_accuracy:.2f}%, Test F1-Score: {test_f1_score:.4f}, Test AUC-ROC: {test_auc_roc:.4f}')
     print('-----------------------------------------------------------------------------------------------------------------')
@@ -261,6 +277,7 @@ def main():
 
 
 if __name__ == "__main__":
+    random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED if torch.cuda.is_available() else 0)

@@ -1,6 +1,7 @@
 {
-    "mode": "word",
+    "class_sentiment": true,
 
+    "mode": "word",
     "use_stopwords": true,
     
     "batch_size": 256,
@@ -16,7 +17,7 @@
 
     "plot_graph": false,
 
-    "word2vec_path": "pretrained/...",
+    "word2vec_path": "../COMP550_Course_Project_xijuan/sgns.merge.char",
     "stopword_path": "data/stopword.txt",
     "dataset_path": "data/online_shopping_10_cats.csv",
     "saved_model_path": "save",

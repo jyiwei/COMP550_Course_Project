@@ -37,17 +37,16 @@ class LSTM_attention(nn.Module):
             num_layers=num_layers,
             bidirectional=self.bidirectional,
             dropout=drop_keep_prob,
+            batch_first=True
         )
 
-        self.attention_W = nn.Linear(2 * hidden_dim, 2 * hidden_dim, bias=False)
-        self.attention_proj = nn.Linear(2 * hidden_dim, 1, bias=False)
+        self.attention_W = nn.Linear(2 * hidden_dim if bidirectional else hidden_dim, 2 * hidden_dim if bidirectional else hidden_dim, bias=False)
+        self.attention_proj = nn.Linear(2 * hidden_dim if bidirectional else hidden_dim, 1, bias=False)
 
         if self.bidirectional:
-            self.decoder1 = nn.Linear(hidden_dim * 2, hidden_dim)
-            self.decoder2 = nn.Linear(hidden_dim, n_class)
+            self.dense = nn.Linear(2 * hidden_dim, n_class)
         else:
-            self.decoder1 = nn.Linear(hidden_dim, hidden_dim)
-            self.decoder2 = nn.Linear(hidden_dim, n_class)
+            self.dense = nn.Linear(hidden_dim, n_class)
 
     def forward(self, inputs):
 
@@ -55,7 +54,7 @@ class LSTM_attention(nn.Module):
         # lengths = torch.clamp(lengths, min=1)
 
         embeddings = self.embedding(inputs.data)
-        packed_embeddings = pack_padded_sequence(embeddings, lengths.cpu(), batch_first=True)
+        packed_embeddings = pack_padded_sequence(embeddings, lengths.cpu(), batch_first=True, enforce_sorted=False)
 
         packed_output, (hidden, cell) = self.encoder(packed_embeddings)
 
@@ -67,8 +66,7 @@ class LSTM_attention(nn.Module):
         scored_x = output * att_score
         encoding = torch.sum(scored_x, dim=1)
 
-        outputs = self.decoder1(encoding)
-        outputs = self.decoder2(outputs)
+        outputs = self.dense(encoding)
 
         return outputs
     
@@ -82,7 +80,7 @@ class LSTM_Model(nn.Module):
                  n_class=2,
                  bidirectional=True,
                  pretrained_weight=None,
-                 update_w2v=None,
+                 update_w2v=True,
                 ):
         super(LSTM_Model, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
@@ -91,7 +89,6 @@ class LSTM_Model(nn.Module):
             self.embedding.weight = nn.Parameter(torch.tensor(pretrained_weight, dtype=torch.float32))
             self.embedding.weight.requires_grad = update_w2v
 
-        self.dropout = nn.Dropout(p=drop_keep_prob)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=num_layers, dropout=drop_keep_prob, bidirectional = bidirectional)
         lstm_output_dim = hidden_dim * 2 if bidirectional else hidden_dim
         self.dense = nn.Linear(lstm_output_dim, n_class)
@@ -103,9 +100,8 @@ class LSTM_Model(nn.Module):
         # lengths = torch.clamp(lengths, min=1)
 
         embedded = self.embedding(inputs)
-        embedded = self.dropout(embedded)
         
-        packed_embedded = pack_padded_sequence(embedded, lengths.cpu(), batch_first=True)
+        packed_embedded = pack_padded_sequence(embedded, lengths.cpu(), batch_first=True, enforce_sorted=False)
         
         packed_output, (hidden, cell) = self.lstm(packed_embedded)
         output, _ = pad_packed_sequence(packed_output, batch_first=True)
